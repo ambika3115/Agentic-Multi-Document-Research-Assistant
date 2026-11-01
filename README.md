@@ -1,57 +1,246 @@
-📚 **Agentic Multi-PDF Research Assistant**
+# 🤖 Agentic Multi-Document Research Assistant
 
-An AI research assistant that searches across multiple PDF documents and answers questions with verifiable page-level citations. It uses Retrieval-Augmented Generation (RAG) with FAISS vector search, and a LangGraph agent that checks whether the retrieved evidence is sufficient and searches again when it is not.
+An AI-powered research assistant that allows users to search across multiple PDF documents and receive accurate, context-aware answers using Retrieval-Augmented Generation (RAG), FAISS vector search, and Agentic AI workflows.
 
-Tech stack: Python · LangChain · LangGraph · Gemini API · FAISS · Gradio
+## 📌 Project Overview
 
-✨ **Features**
-- Multi-document RAG: index many PDFs into a single FAISS vector store and ask questions across all of them.
-- Agentic workflow (LangGraph): the agent plans its searches, retrieves evidence, grades whether it is enough, and runs additional searches with new queries when information is missing.
-- Answers with references: every claim is cited as [file.pdf, p.X]. Citations are checked against the chunks that were actually retrieved, and a Sources list (file, page, snippet) is shown under each answer. Unmatched citations are flagged with a warning.
-- Transparent reasoning: an expandable Agent steps section shows the queries, the evidence check, and any follow-up searches.
-- Incremental indexing: add more PDFs at any time; only the new files are embedded.
-- Two ways to use it: a polished Gradio web UI or a command-line mode.
-- Notebook-friendly: missing dependencies are installed automatically on first run (useful for fresh Colab sessions).
+Searching through multiple PDF documents manually can be time-consuming, especially when documents contain large amounts of information.
 
+The **Agentic Multi-Document Research Assistant** simplifies this process by allowing users to upload multiple PDF documents and ask questions in natural language.
 
-🧠 **How it works**
-Node	                What it does
-plan	          Uses Gemini (structured output) to break the question into 1–3 focused search queries.
-retrieve	      Runs each pending query against FAISS using MMR for diverse results, and merges new chunks into the evidence pool (duplicates removed).
-grade	          Gemini judges whether the evidence fully supports an answer. If not, it states what is missing and proposes new queries (queries already tried are filtered out).
-generate	      Answers using only the evidence, cites [file.pdf, p.X], states clearly what the documents do not cover, then verifies each citation.
+The system uses LangChain for document processing and RAG implementation, FAISS for efficient vector similarity search, and Gemini API for generating contextual answers.
 
+LangGraph manages the agentic workflow by coordinating document retrieval, evidence evaluation, and additional retrieval when the available information is insufficient.
 
--**Running in Google Colab / Jupyter**
-- Paste the contents of multi_pdf_research_assistant.py into a cell.
-- Set your key above it: import os; os.environ["GOOGLE_API_KEY"] = "your-gemini-key".
-- Run the cell. The first run installs dependencies (~1 minute). For a public share link, set os.environ["GRADIO_SHARE"] = "1" first.
+The assistant also provides document references to help users verify the generated answers.
 
-Colab may print pip dependency-conflict warnings about google-auth or requests. They are harmless for this project.
+## 🎯 Project Objectives
 
+- Automate information retrieval from multiple PDF documents.
+- Allow users to ask questions using natural language.
+- Retrieve relevant information using semantic similarity search.
+- Implement an agentic workflow that evaluates retrieved evidence.
+- Perform additional retrieval when the initial context is insufficient.
+- Generate context-aware answers with document references.
+- Reduce manual document-search effort and improve answer reliability.
 
-💬 **Example questions**
-- Summarize the key points of each document.
-- Compare the main conclusions across the documents.
-- What methods or approaches are described? Cite the pages.
-- Do any of the documents contradict each other?
+## 🛠️ Technologies Used
 
-**Example of the output format:**
+| Technology | Purpose |
+|---|---|
+| Python | Core application development |
+| LangChain | Document loading, text splitting, embeddings, and RAG pipeline |
+| LangGraph | Agentic workflow orchestration |
+| Gemini API | Context-aware answer generation |
+| FAISS | Vector storage and similarity search |
+| Sentence Transformers / Gemini Embeddings | Convert text into vector representations |
+| PyMuPDF / PyPDF | Extract text from PDF documents |
 
-text
-Revenue grew 10% in 2023 [annual_report.pdf, p.12], while the second paper
-attributes cost reductions to automation [ops_study.pdf, p.4].
+## ⚙️ System Workflow
 
-Sources (cited in the answer)
-- annual_report.pdf, page 12: "Revenue grew 10% in 2023 ..."
-- ops_study.pdf, page 4: "Costs fell due to automation ..."
+1. **PDF Upload:** Users upload multiple PDF documents.
+2. **Document Extraction:** Extract text from uploaded PDF files.
+3. **Text Chunking:** Split extracted text into smaller, meaningful chunks with overlapping content.
+4. **Embedding Generation:** Convert text chunks into numerical vector representations using an embedding model.
+5. **Vector Storage:** Store generated embeddings in the FAISS vector database.
+6. **User Query:** Accept questions in natural language.
+7. **Semantic Retrieval:** Search FAISS to retrieve the most relevant document chunks.
+8. **Evidence Evaluation:** LangGraph coordinates the workflow and checks whether the retrieved information is sufficient to answer the question.
+9. **Additional Retrieval:** If the evidence is insufficient, the workflow performs another retrieval attempt.
+10. **Answer Generation:** Gemini generates an answer based on the retrieved context.
+11. **Source References:** Display document references to help users verify the generated information.
 
-▸ Agent steps
+## 🧠 Agentic Workflow Using LangGraph
 
+LangGraph is used to manage the agentic workflow through different nodes and conditional transitions.
 
-⚠️ **Limitations**
-- Scanned / image-only PDFs contain no extractable text and need OCR first.
-- Citation checks are structural: they confirm that a cited file and page were among the retrieved evidence, not that the model interpreted the passage correctly. Use the Sources snippets to verify important claims.
-- API rate limits: free-tier Gemini quotas can slow down indexing of very large PDFs. The script batches requests and retries automatically.
-- Answers are only as good as the retrieved text; tables, charts, and figures inside PDFs are not interpreted.
+### Main Workflow Nodes
 
+- **Document Retrieval Node:** Retrieves relevant chunks from the FAISS vector database.
+- **Evidence Evaluation Node:** Checks whether the retrieved context contains sufficient information to answer the user's question.
+- **Additional Retrieval Node:** Performs another search if the initial retrieval does not provide sufficient evidence.
+- **Answer Generation Node:** Uses Gemini API to generate a response based on the available context.
+
+### Workflow Architecture
+
+```text
+             User Uploads PDFs
+                    |
+                    v
+            Document Extraction
+                    |
+                    v
+              Text Chunking
+                    |
+                    v
+           Embedding Generation
+                    |
+                    v
+             FAISS Vector DB
+                    |
+                    v
+               User Query
+                    |
+                    v
+             Retrieve Context
+                    |
+                    v
+           Evidence Evaluation
+                    |
+             Is Evidence
+              Sufficient?
+               /       \
+             Yes        No
+              |          |
+              v          v
+         Generate    Additional
+          Answer      Retrieval
+              |          |
+              |__________|
+                    |
+                    v
+             Final Answer
+                    |
+                    v
+           Document References
+```
+
+## 🔍 Key Features
+
+- **Multi-PDF Support:** Search information across multiple PDF documents.
+- **Semantic Search:** Retrieve relevant information based on meaning rather than exact keyword matching.
+- **RAG Architecture:** Generate answers using retrieved document context.
+- **Agentic Workflow:** Use LangGraph to manage retrieval and evidence evaluation.
+- **Conditional Retrieval:** Perform additional searches when the initial evidence is insufficient.
+- **Source References:** Provide document references for answer verification.
+- **Context-Aware Responses:** Generate answers grounded in the uploaded documents.
+
+## 📁 Project Structure
+
+```text
+Agentic-Multi-Document-Research-Assistant/
+│
+├── data/
+│   └── documents/
+│
+├── documents/
+│
+├── embeddings/
+│   └── faiss_index/
+│
+├── agents/
+│   ├── retrieval_agent.py
+│   ├── evaluation_agent.py
+│   └── answer_agent.py
+│
+├── workflow/
+│   └── research_graph.py
+│
+├── utils/
+│   ├── pdf_extractor.py
+│   ├── text_chunker.py
+│   └── embeddings.py
+│
+├── config.py
+├── main.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+*Note: This is a suggested folder structure. Modify it based on your actual implementation.*
+
+## 🚀 Installation and Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/Agentic-Multi-Document-Research-Assistant.git
+
+cd Agentic-Multi-Document-Research-Assistant
+```
+
+### 2. Create a Virtual Environment
+
+```bash
+python -m venv venv
+```
+
+Activate the environment:
+
+**Windows:**
+```bash
+venv\Scripts\activate
+```
+
+**Linux / macOS:**
+```bash
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Gemini API Key
+
+Create a `.env` file in the project root directory.
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Never upload your actual API key to GitHub.
+
+### 5. Run the Application
+
+```bash
+python main.py
+```
+
+## 📊 Example Use Case
+
+**Input:**
+
+Upload multiple PDF documents related to Artificial Intelligence, Machine Learning, and Deep Learning.
+
+**User Query:**
+
+"What are the major differences between supervised and unsupervised learning?"
+
+**Expected Output:**
+
+The assistant retrieves relevant information from the uploaded documents, evaluates the available evidence, and generates a structured answer explaining the differences.
+
+It also provides document references so users can verify the information.
+
+## 🔮 Future Enhancements
+
+- Add support for DOCX, TXT, and other document formats.
+- Implement hybrid search combining keyword and semantic retrieval.
+- Integrate a reranking model to improve retrieval accuracy.
+- Add conversation memory for follow-up questions.
+- Implement document-level access control.
+- Add a user-friendly Streamlit interface.
+- Support large-scale document collections.
+
+## 💡 Expected Benefits
+
+- Reduces manual document-search effort.
+- Improves information retrieval across multiple documents.
+- Provides context-aware and evidence-supported answers.
+- Improves answer reliability through evidence evaluation.
+- Makes research and document analysis more efficient.
+
+## 👩‍💻 Author
+
+**Ambika Yallal**
+
+Interested in Artificial Intelligence, Generative AI, Machine Learning, and Agentic AI.
+
+---
+
+⭐ If you find this project useful, feel free to star the repository!
